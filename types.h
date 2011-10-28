@@ -3,7 +3,7 @@
 
 /* modes */
 #define FSC_MODE_GEN 'g'
-#define FSC_MODE_CMP 'c'
+#define FSC_MODE_CHK 'c'
 
 /* default file names */
 #define FSC_FILE_HASH_FILENAME "filedb"
@@ -22,8 +22,10 @@ struct file_meta_t {
         int mode;
         int uid;
         int gid;
+	int inode;
         unsigned long fsize;
-        char last_modified[FSC_UL_LENGTH];
+        char mtime[FSC_UL_LENGTH];
+	char ctime[FSC_UL_LENGTH];
 };
 
 #endif

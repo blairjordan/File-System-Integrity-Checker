@@ -32,7 +32,7 @@ void print_file_hash(unsigned char* hash);
 int main(int argc, char* argv[]) {
 
 	if (argc != 3) {
-		printf("usage: fsc <mode> <key>\n");
+		printf("%s","usage: fsc <mode> <pass>\n");
 		exit(1);
 	}
 
@@ -41,7 +41,7 @@ int main(int argc, char* argv[]) {
 		mode = argv[1][0];
 	}
 
-	if ((mode != FSC_MODE_GEN) && (mode != FSC_MODE_CMP)) {
+	if ((mode != FSC_MODE_GEN) && (mode != FSC_MODE_CHK)) {
 		printf("invalid run mode: %s\n", argv[1]);
 		exit(1);
 	}
@@ -50,7 +50,7 @@ int main(int argc, char* argv[]) {
 
 	if (mode == FSC_MODE_GEN) {
 		generate_db_hash(key);
-	} else if (mode == FSC_MODE_CMP) {
+	} else if (mode == FSC_MODE_CHK) {
 
 		/* Generate db hash and compare it to stored hash. */
 		int status = compare_db_hash(key);
@@ -90,7 +90,7 @@ void generate_db_hash(const char *key) {
                		if (feof(fp)) break;
                 	hash = get_file_hash(fname);
                 	write_file_hash(fp2, fname, hash, PATH_INCLUDE);
-                	memset(&hash[0], 0, sizeof(hash));
+                	memset(hash, 0, mhash_get_block_size(MHASH_SHA256));
         	}
 
 		fclose(fp2);
@@ -105,7 +105,7 @@ void generate_db_hash(const char *key) {
 
 	FILE *fp3 = fopen(FSC_DB_HASH_FILENAME, "w");
 	if (fp3 == NULL) {
-		fprintf(stderr, "could not db hash file for writing: %s\n", FSC_DB_HASH_FILENAME);
+		printf("could not db hash file for writing: %s\n", FSC_DB_HASH_FILENAME);
 		exit(1);
 	}
 
@@ -127,6 +127,8 @@ int compare_db_hash(const char *key) {
 		printf("unable read db hash: %s\n", FSC_DB_HASH_FILENAME);
 		exit(1);
 	}
+
+	// TODO
 
 	/* Read the db hash. */
 	fscanf(fp, "%s", cmphash);
@@ -164,7 +166,7 @@ void compare_file_hashes() {
 		if (memcmp(cmphash, get_hash_str(hash),hash_length*2) == 0) {
 			printf("okay\n");
 		} else {
-			printf("modified\n");
+			printf("changed\n");
 		}
 
 	}
@@ -292,9 +294,10 @@ struct file_meta_t get_file_meta(char* fname) {
 	file_meta.mode = buf.st_mode;
 	file_meta.uid = buf.st_uid;
 	file_meta.gid = buf.st_gid;
+	file_meta.inode = buf.st_ino;
 	file_meta.fsize = (unsigned long) buf.st_size;
- 	snprintf(file_meta.last_modified, FSC_UL_LENGTH, "%lu", buf.st_mtime);
-
+ 	snprintf(file_meta.mtime, FSC_UL_LENGTH, "%lu", buf.st_mtime);
+	snprintf(file_meta.ctime, FSC_UL_LENGTH, "%lu", buf.st_ctime);
 	return file_meta;
 }
 
